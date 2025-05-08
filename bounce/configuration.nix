@@ -84,6 +84,7 @@
   systemd.services.wg-bongo-routing = {
     enable = true;
     wants = [ "network-online.target" ];
+    after = [ "network-online.target" ];
     wantedBy = [ "default.target" ];
     description = "Add routing table entries for bongo forward proxy";
     serviceConfig = {
@@ -91,11 +92,13 @@
       RemainAfterExit = "yes";
       ExecStart = [
         "${pkgs.iproute2}/bin/ip rule add from 10.42.0.3 table 100"
+        "${pkgs.iproute2}/bin/ip rule add from 10.42.0.4 table 100"
         "${pkgs.iproute2}/bin/ip route add 0.0.0.0/0 dev wg0 table 100"
       ];
       ExecStop = [
-        "${pkgs.iproute2}/bin/ip rule add from 10.42.0.3 table 100"
-        "${pkgs.iproute2}/bin/ip route add 0.0.0.0/0 dev wg0 table 100"
+        "${pkgs.iproute2}/bin/ip rule del from 10.42.0.3 table 100"
+        "${pkgs.iproute2}/bin/ip rule del from 10.42.0.4 table 100"
+        "${pkgs.iproute2}/bin/ip route del 0.0.0.0/0 dev wg0 table 100"
       ];
     };
   };
