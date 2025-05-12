@@ -103,8 +103,13 @@
     };
   };
 
+  systemd.services.coredns = {
+    wants = [ "network-online.target" ];
+    after = [ "network-online.target" ];
+  };
+
   networking.firewall = {
-    checkReversePath = false; 
+    checkReversePath = true; 
     interfaces.enp1s0 = {
       allowedUDPPorts = [ 51820 ];
     };
@@ -132,7 +137,17 @@
   services.coredns = {
     enable = true;
     config = ''
+      (quad9) {
+        forward . tls://9.9.9.9 {
+          tls_servername dns.quad9.net
+          health_check 5s
+        }
+        cache 30
+        errors
+      }
+
       . {
+        bind 10.42.0.1
         hosts {
           10.42.0.1 bounce.int.leonardobishop.com
           10.42.0.2 bongo.int.leonardobishop.com
@@ -142,15 +157,19 @@
           10.42.0.5 eris.int.leonardobishop.com
           fallthrough
         }
-        forward . 9.9.9.9 149.112.112.112
-        errors
+        import quad9
+      }
+      
+      . {
+        bind 127.0.0.1
+        import quad9
       }
     '';
   };
 
   programs.tcpdump.enable = true;
 
-  users.users."root".openssh.authorizedKeys.keys = [
+  users.users.root.openssh.authorizedKeys.keys = [
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAyCwcyijBVmxn8IuXVAtbP/rXFeHDOiHy5wKl3iaaHf leonardo@gchq-surveillance-van"
   ];
 
